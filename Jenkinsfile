@@ -19,13 +19,13 @@ pipeline {
             }
         }
 
-        stage("pushImage") {
+       stage("pushImage") {
             steps {
                 script {
                     echo "Pushing Image to DockerHub..."
-                    withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                        // Uses Windows batch variable escaping (%VAR%) to log in securely
-                        bat "(echo %PASS%) | docker login -u %USER% --password-stdin"
+                    withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        // This native docker flag avoids using 'echo' and 'pipe' entirely
+                        bat 'docker login -u "%USER%" -p "%PASS%"'
                         bat "docker push ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER}"
                     }
                 }
