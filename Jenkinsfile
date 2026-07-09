@@ -25,7 +25,7 @@ pipeline {
                     echo "Pushing Image to DockerHub..."
                     withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
                         // This native docker flag avoids using 'echo' and 'pipe' entirely
-                        bat 'docker login -u "%USER%" -p "%PASS%"'
+                        bat 'docker login -u %USER% -p %PASS%'
                         bat "docker push ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER}"
                     }
                 }
