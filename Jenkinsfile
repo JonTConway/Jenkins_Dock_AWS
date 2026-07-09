@@ -9,12 +9,12 @@ pipeline {
     }
 
     stages {
-
         stage("buildImage") {
             steps {
                 script {
                     echo "Building Docker Image..."
-                    sh "docker build -t ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER} ."
+                    // Uses Windows bat to build the image locally
+                    bat "docker build -t ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER} ."
                 }
             }
         }
@@ -24,8 +24,9 @@ pipeline {
                 script {
                     echo "Pushing Image to DockerHub..."
                     withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                        sh "echo $PASS | docker login -u $USER --password-stdin"
-                        sh "docker push ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER}"
+                        // Uses Windows batch variable escaping (%VAR%) to log in securely
+                        bat "echo %PASS% | docker login -u %USER% --password-stdin"
+                        bat "docker push ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER}"
                     }
                 }
             }
@@ -34,9 +35,9 @@ pipeline {
         stage("deployCompose") {
             steps {
                 script {
-                    echo "Deploying with Docker Compose..."
+                    echo "Deploying with Docker Compose to Ubuntu EC2..."
+                    // sshagent injects the keys, and 'sh' executes via Git Bash on Windows
                     sshagent(['ec2']) {
-                        // Upload files once to reduce redundant SCP commands
                         sh """
                         scp -o StrictHostKeyChecking=no ${DotEnvFile} ${DockerComposeFile} ubuntu@${EC2_IP}:/home/ubuntu
                         ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "docker compose -f /home/ubuntu/${DockerComposeFile} --env-file /home/ubuntu/${DotEnvFile} down"
