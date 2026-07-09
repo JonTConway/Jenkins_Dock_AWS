@@ -36,9 +36,15 @@ pipeline {
             steps {
                 script {
                     echo "Deploying with Docker Compose to Ubuntu EC2..."
-                    // sshagent injects the keys, and 'sh' executes via Git Bash on Windows
-                    sshagent(['ec2']) {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ec2', keyFileVariable: 'SSH_KEY')]) {
                         sh """
+                        # 1. Start the native shell agent manually
+                        eval \$(ssh-agent -s)
+                        
+                        # 2. Add the temporary key file injected by Jenkins
+                        ssh-add "\${SSH_KEY}"
+                        
+                        # 3. Your original deployment commands
                         scp -o StrictHostKeyChecking=no ${DotEnvFile} ${DockerComposeFile} ubuntu@${EC2_IP}:/home/ubuntu
                         ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "docker compose -f /home/ubuntu/${DockerComposeFile} --env-file /home/ubuntu/${DotEnvFile} down"
                         ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "docker compose -f /home/ubuntu/${DockerComposeFile} --env-file /home/ubuntu/${DotEnvFile} up -d"
