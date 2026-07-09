@@ -23,7 +23,7 @@ pipeline {
             steps {
                 script {
                     echo "Pushing Image to DockerHub..."
-                    withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
                         // Uses Windows batch variable escaping (%VAR%) to log in securely
                         bat "(echo %PASS%) | docker login -u %USER% --password-stdin"
                         bat "docker push ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER}"
